@@ -363,18 +363,15 @@ class DashboardState extends ChangeNotifier {
 
   void setGarageDoor(bool open) {
     String newStatus = open ? 'OPEN' : 'CLOSED';
-    if (garageStatus != newStatus) {
-      _updateFB('garage_door', {'status': newStatus, 'state': open});
-
-      // Send BOTH keys so the ESP32 can parse either format
-      if (mqtt != null && mqtt!.isConnected) {
-        final uid = auth?.currentUser?.uid;
-        if (uid != null) {
-          mqtt!.publishCommand(uid, 'garage_door', {'state': open, 'status': newStatus});
-        }
-      }
-      _updateLogs('garageLog', open ? 'Garage opened remotely' : 'Garage closed');
-    }
+    String time = "${DateTime.now().hour.toString().padLeft(2,'0')}:${DateTime.now().minute.toString().padLeft(2,'0')}";
+    garageLog.insert(0, open ? 'Garage opened remotely at $time' : 'Garage closed remotely at $time');
+    if (garageLog.length > 5) garageLog.removeLast();
+    
+    // Exactly matches the home control setDoor logic
+    _updateFB('garage_door', {
+      'status': newStatus,
+      'state': open 
+    });
   }
 
   // --- GARAGE ACTIONS ---

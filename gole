@@ -1,0 +1,342 @@
+SMART HOME SYSTEM – FULL IMPLEMENTATION AND CONNECTION GUIDE
+
+You are building a complete smart home research system using three ESP32 boards that communicate through MQTT and are controlled by a dashboard application.
+
+The goal is to make sure:
+
+• All three ESP32 boards are connected correctly
+• All sensors and actuators work
+• All ESP32 devices communicate using MQTT
+• The dashboard receives real-time data
+• The dashboard can control all devices
+• Emergency events trigger actions across systems
+
+You must carefully implement the following steps and verify that everything works.
+
+---
+
+STEP 1 — SYSTEM OVERVIEW
+
+The system contains three ESP32 controllers:
+
+ESP32 #1 — Home Energy System
+ESP32 #2 — Garage Automation
+ESP32 #3 — Smart Garden System
+
+All ESP32 devices connect to the SAME WiFi network and the SAME MQTT broker.
+
+The dashboard also connects to the same MQTT broker to display data and send commands.
+
+Communication Flow
+
+Sensors → ESP32 → MQTT Broker → Dashboard
+
+Dashboard Commands → MQTT Broker → ESP32 → Device Action
+
+Also:
+
+ESP32 → MQTT → Other ESP32
+
+Example:
+
+If smoke is detected in the garden system, the garden ESP32 sends a message through MQTT and the home and garage ESP32 open their doors automatically.
+
+---
+
+STEP 2 — HARDWARE CONNECTIONS
+
+You must connect all sensors and devices to the ESP32 boards.
+
+HOME ESP32 (Energy System)
+
+Devices connected:
+
+3 LEDs → digital pins
+RGB LED → PWM pins
+DHT11/DHT22 sensor → data pin
+RTC module DS3231 → I2C pins
+Servo motor → PWM pin
+Magnetic reed switch → digital input
+PIR motion sensor → digital input
+Battery level sensor → analog pin (optional)
+
+Make sure all grounds are shared and power is correct.
+
+GARAGE ESP32
+
+Devices connected:
+
+Servo motor → garage door
+Ultrasonic sensor HC-SR04 → car detection
+Bluetooth scanning → built into ESP32
+Optional buzzer for warnings
+
+GARDEN ESP32
+
+Devices connected:
+
+Soil moisture sensor → analog pin
+Water pump relay → digital output
+MQ-2 smoke sensor → analog input
+Ultrasonic sensor → water tank level
+Buzzer → alarm output
+Warning LED → digital output
+
+After connecting hardware, verify each sensor individually.
+
+---
+
+STEP 3 — INSTALL REQUIRED LIBRARIES
+
+Install these libraries in Arduino IDE.
+
+Required libraries:
+
+WiFi.h
+PubSubClient.h
+DHT sensor library
+RTClib
+ESP32Servo
+NewPing (for ultrasonic)
+Adafruit Sensor
+ArduinoJson (optional for structured data)
+
+Verify that all libraries compile correctly.
+
+---
+
+STEP 4 — CONNECT ESP32 TO WIFI
+
+Each ESP32 must connect to WiFi before connecting to MQTT.
+
+Implement code that:
+
+1. Connects to WiFi using SSID and password
+2. Waits until WiFi connection is successful
+3. Prints connection status in Serial Monitor
+
+Example output
+
+Connecting to WiFi...
+WiFi connected
+IP address: 192.168.1.24
+
+Verify WiFi works before continuing.
+
+---
+
+STEP 5 — SETUP MQTT BROKER
+
+Use one of these brokers:
+
+HiveMQ Cloud (recommended for cloud access)
+Mosquitto broker (local server)
+
+If using HiveMQ:
+
+1. Create an account
+2. Create a cluster
+3. Note the following credentials
+
+Broker address
+Port
+Username
+Password
+
+Example
+
+Broker: xxxxx.s1.eu.hivemq.cloud
+Port: 8883
+
+All ESP32 devices must connect to the SAME broker.
+
+---
+
+STEP 6 — CONNECT ESP32 TO MQTT
+
+For each ESP32:
+
+1. Create MQTT client
+2. Connect to broker
+3. Subscribe to relevant topics
+4. Publish sensor data regularly
+
+Example serial output
+
+Connecting to MQTT...
+MQTT connected
+
+If MQTT connection fails, the ESP32 must retry automatically.
+
+---
+
+STEP 7 — MQTT TOPIC STRUCTURE
+
+Use a clear topic structure.
+
+HOME SYSTEM
+
+home/led1/set
+home/led2/set
+home/led3/set
+home/rgb/set
+home/temperature
+home/humidity
+home/motion
+home/door/status
+home/door/set
+home/night_mode
+home/battery
+
+GARAGE SYSTEM
+
+garage/door/set
+garage/door/status
+garage/bluetooth
+garage/car_detect
+garage/auto_open
+garage/auto_close
+garage/lock
+garage/history
+
+GARDEN SYSTEM
+
+garden/soil
+garden/pump/set
+garden/pump/status
+garden/smoke
+garden/fire
+garden/tank
+garden/history
+
+GLOBAL SYSTEM EVENTS
+
+system/fire_alert
+system/emergency_open
+
+---
+
+STEP 8 — IMPLEMENT CROSS-SYSTEM COMMUNICATION
+
+The systems must react to each other.
+
+Example emergency scenario:
+
+If smoke is detected in the garden system:
+
+Garden ESP32 publishes
+
+system/fire_alert = TRUE
+
+Home ESP32 subscribes to this topic.
+
+When it receives the message:
+
+Open the house door automatically.
+
+Garage ESP32 also subscribes.
+
+When message received:
+
+Open garage door automatically.
+
+This ensures emergency evacuation.
+
+---
+
+STEP 9 — BUILD THE DASHBOARD
+
+The dashboard must connect to MQTT and subscribe to all topics.
+
+It must show real-time sensor values and allow device control.
+
+DASHBOARD STRUCTURE
+
+Page 1 — Home Energy
+
+LED controls
+RGB LED color picker
+Temperature display
+Humidity display
+Real-time clock
+Door control
+Motion detection
+Night mode
+Battery status
+
+Page 2 — Garage
+
+Garage door open/close
+Bluetooth authorization status
+Car detection
+Auto-open toggle
+Auto-close toggle
+Garage lock toggle
+Door history
+
+Page 3 — Garden
+
+Soil moisture gauge
+Water pump control
+Auto watering mode
+Smoke detection
+Fire pump control
+Tank level
+Watering history
+Fire event history
+
+---
+
+STEP 10 — TEST ALL FEATURES
+
+After implementation, test everything carefully.
+
+Verify the following:
+
+WiFi connects successfully
+MQTT connects successfully
+ESP32 publishes data correctly
+Dashboard receives data
+Dashboard buttons control devices
+Sensors update in real time
+Servo motors respond correctly
+Pump activates correctly
+Smoke detection triggers alarm
+Emergency fire alert opens doors
+
+Check serial monitor for errors.
+
+---
+
+STEP 11 — VERIFY SYSTEM INTEGRATION
+
+Final system tests must confirm:
+
+All three ESP32 devices are online
+All MQTT topics are active
+Dashboard displays correct real-time values
+Commands from dashboard reach ESP32
+Emergency messages trigger actions across devices
+
+If any device does not respond:
+
+Check WiFi
+Check MQTT connection
+Check topic names
+Check hardware wiring
+
+The final system must operate reliably with all devices connected.
+
+---
+
+FINAL REQUIREMENT
+
+Before finishing, verify that:
+
+• All sensors send correct data
+• All actuators respond to dashboard commands
+• All ESP32 boards communicate through MQTT
+• All three dashboard pages show live information
+• Emergency events trigger the correct automatic actions
+
+The entire system must be fully connected and working in real time.
