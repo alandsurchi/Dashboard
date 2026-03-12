@@ -96,6 +96,17 @@ void OnDataRecv(const esp_now_recv_info *info, const uint8_t *incomingData, int 
   }
 }
 
+int32_t getWiFiChannel(const char *ssid) {
+  if (int32_t n = WiFi.scanNetworks()) {
+    for (uint8_t i = 0; i < n; i++) {
+      if (!strcmp(ssid, WiFi.SSID(i).c_str())) {
+        return WiFi.channel(i);
+      }
+    }
+  }
+  return 1; // Default fallback
+}
+
 // ---------------------------------------------------
 // 5. SETUP 
 // ---------------------------------------------------
@@ -113,7 +124,17 @@ void setup() {
 
   // ── IMPORTANT: Wi-Fi Channel Synchonization ──
   WiFi.mode(WIFI_STA);
-  esp_wifi_set_channel(WIFI_CHAN, WIFI_SECOND_CHAN_NONE);
+  WiFi.disconnect();
+  delay(100);
+  int32_t channel = getWiFiChannel("Alo");
+  
+  // Enforce channel change using promiscuous mode
+  esp_wifi_set_promiscuous(true);
+  esp_wifi_set_channel(channel, WIFI_SECOND_CHAN_NONE);
+  esp_wifi_set_promiscuous(false);
+  
+  Serial.print("ESP-NOW synced to Router Channel: ");
+  Serial.println(channel);
 
   // Init ESP-NOW
   if (esp_now_init() != ESP_OK) {
@@ -125,7 +146,7 @@ void setup() {
 
   // Register peer (Gateway)
   memcpy(peerInfo.peer_addr, gatewayAddress, 6);
-  peerInfo.channel = WIFI_CHAN;
+  peerInfo.channel = channel;
   peerInfo.encrypt = false;
   if (esp_now_add_peer(&peerInfo) != ESP_OK) {
     Serial.println("Failed to add peer");

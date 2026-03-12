@@ -110,8 +110,8 @@ void updateLCD() {
 }
 
 void moveDoor(int angle) {
-  if (angle >= 180) angle = 170;
-  if (angle <= 0) angle = 10;
+  if (angle > 180) angle = 180;
+  if (angle < 0) angle = 0;
   int dutyCycle = map(angle, 0, 180, 410, 1966);
   ledcAttach(SERVO_PIN, 50, 14);
   ledcWrite(SERVO_PIN, dutyCycle);
@@ -257,13 +257,15 @@ void setup() {
   if (!rtc.begin()) Serial.println("Couldn't find RTC");
   dht.begin();
 
-  // 1. Core Wi-Fi
+  // Core Wi-Fi
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED) { delay(500); }
   
-  // 2. Wi-Fi Channel Synchonization for ESP-NOW
-  esp_wifi_set_channel(WIFI_CHAN, WIFI_SECOND_CHAN_NONE);
+  // Get actual channel from router
+  uint8_t actual_chan = WiFi.channel();
+  Serial.print("Gateway connected on channel: ");
+  Serial.println(actual_chan);
 
   // 3. Init ESP-NOW
   if (esp_now_init() != ESP_OK) return;
@@ -271,13 +273,13 @@ void setup() {
 
   // Register Garage
   memcpy(garagePeerInfo.peer_addr, garageAddress, 6);
-  garagePeerInfo.channel = WIFI_CHAN;
+  garagePeerInfo.channel = actual_chan;
   garagePeerInfo.encrypt = false;
   esp_now_add_peer(&garagePeerInfo);
 
   // Register Garden
   memcpy(gardenPeerInfo.peer_addr, gardenAddress, 6);
-  gardenPeerInfo.channel = WIFI_CHAN;
+  gardenPeerInfo.channel = actual_chan;
   gardenPeerInfo.encrypt = false;
   esp_now_add_peer(&gardenPeerInfo);
 
