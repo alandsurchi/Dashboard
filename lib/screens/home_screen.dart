@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
 import '../services/dashboard_state.dart';
+import '../services/voice_command_service.dart';
 import 'home_control_screen.dart';
 import 'smart_garage_screen.dart'; 
 import 'smart_garden_screen.dart';
@@ -14,6 +16,14 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  final stt.SpeechToText _speech = stt.SpeechToText();
+  final VoiceCommandService _voiceCommandService = VoiceCommandService();
+  bool _speechAvailable = false;
+  bool _isListening = false;
+  String _lastRecognizedWords = '';
+  bool _handledCurrentSpeechSession = false;
+  String _lastExecutedNormalized = '';
 
   final List<Widget> _pages = [
     const HomeControlScreen(),
@@ -22,7 +32,127 @@ class _HomeScreenState extends State<HomeScreen> {
   ];
 
   @override
+  void dispose() {
+    _speech.stop();
+    super.dispose();
+  }
+
+  Future<void> _ensureSpeechReady() async {
+    if (_speechAvailable) return;
+
+    final available = await _speech.initialize(
+      onStatus: (status) {
+        if (!mounted) return;
+        if (status == 'done' || status == 'notListening') {
+          _executeRecognizedFallbackIfNeeded();
+          setState(() => _isListening = false);
+        }
+      },
+      onError: (error) {
+        if (!mounted) return;
+        setState(() => _isListening = false);
+        _showVoiceMessage('Voice error: ${error.errorMsg}');
+      },
+    );
+
+    if (!mounted) return;
+
+    setState(() {
+      _speechAvailable = available;
+    });
+
+    if (!available) {
+      _showVoiceMessage('Voice assistant is not available on this device/browser.');
+    }
+  }
+
+  Future<void> _toggleListening() async {
+    await _ensureSpeechReady();
+    if (!_speechAvailable) return;
+
+    if (_isListening) {
+      await _speech.stop();
+      if (!mounted) return;
+      setState(() => _isListening = false);
+      return;
+    }
+
+    setState(() {
+      _lastRecognizedWords = '';
+      _handledCurrentSpeechSession = false;
+    });
+
+    _lastExecutedNormalized = '';
+
+    await _speech.listen(
+      listenFor: const Duration(seconds: 12),
+      pauseFor: const Duration(seconds: 3),
+      listenOptions: stt.SpeechListenOptions(
+        partialResults: true,
+        cancelOnError: true,
+      ),
+      onResult: (result) {
+        if (!mounted) return;
+        setState(() {
+          _lastRecognizedWords = result.recognizedWords;
+        });
+
+        if (result.finalResult && result.recognizedWords.trim().isNotEmpty) {
+          _executeVoiceCommandIfNeeded(result.recognizedWords);
+        }
+      },
+    );
+
+    if (!mounted) return;
+    setState(() => _isListening = _speech.isListening);
+  }
+
+  void _executeVoiceCommand(String transcript) {
+    final dashboardState = context.read<DashboardState>();
+    final message = _voiceCommandService.executeCommand(transcript, dashboardState);
+    _showVoiceMessage(message);
+  }
+
+  void _executeVoiceCommandIfNeeded(String transcript) {
+    final normalized = transcript.trim().toLowerCase();
+    if (normalized.isEmpty) return;
+    if (_handledCurrentSpeechSession && _lastExecutedNormalized == normalized) return;
+
+    _handledCurrentSpeechSession = true;
+    _lastExecutedNormalized = normalized;
+    _executeVoiceCommand(transcript);
+  }
+
+  void _executeRecognizedFallbackIfNeeded() {
+    final text = _lastRecognizedWords.trim();
+    if (text.isEmpty) return;
+    if (_handledCurrentSpeechSession) return;
+    _executeVoiceCommandIfNeeded(text);
+  }
+
+  void _showVoiceMessage(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          message,
+          style: const TextStyle(
+            color: Colors.black,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        duration: const Duration(seconds: 2),
+        backgroundColor: const Color(0xFFFFD54F),
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.fromLTRB(16, 0, 16, 100),
+      ),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final isMobile = MediaQuery.of(context).size.width <= 800;
+
     return Container(
       decoration: const BoxDecoration(
         color: Color(0xFF2E2622), // Deep dark brown fallback
@@ -33,11 +163,12 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
       child: Scaffold(
+        key: _scaffoldKey,
         backgroundColor: Colors.transparent,
         body: Row(
           children: [
             // Solid Sidebar matches Image 2
-            if (MediaQuery.of(context).size.width > 800)
+            if (!isMobile)
               _buildSidebar(),
             
             // Main Content Area
@@ -48,7 +179,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         
         // Drawer for mobile devices
-        drawer: MediaQuery.of(context).size.width <= 800 ? Drawer(
+        drawer: isMobile ? Drawer(
           backgroundColor: const Color(0xFF3E352F),
           child: Column(
             children: [
@@ -57,15 +188,32 @@ class _HomeScreenState extends State<HomeScreen> {
             ],
           ),
         ) : null,
-        
-        // Add a floating menu button for mobile
-        floatingActionButton: MediaQuery.of(context).size.width <= 800 ? Builder(
-          builder: (context) => FloatingActionButton(
-            backgroundColor: Theme.of(context).primaryColor,
-            child: const Icon(Icons.menu, color: Colors.black),
-            onPressed: () => Scaffold.of(context).openDrawer(),
-          ),
-        ) : null,
+
+        floatingActionButton: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            FloatingActionButton(
+              heroTag: 'voice-fab',
+              backgroundColor: _isListening ? Colors.redAccent : Theme.of(context).primaryColor,
+              tooltip: _lastRecognizedWords.isEmpty
+                  ? (_isListening ? 'Listening...' : 'Voice command')
+                  : _lastRecognizedWords,
+              onPressed: _toggleListening,
+              child: Icon(_isListening ? Icons.mic : Icons.mic_none, color: Colors.black),
+            ),
+            if (isMobile) ...[
+              const SizedBox(height: 12),
+              FloatingActionButton(
+                heroTag: 'menu-fab',
+                backgroundColor: Theme.of(context).primaryColor,
+                tooltip: 'Menu',
+                onPressed: () => _scaffoldKey.currentState?.openDrawer(),
+                child: const Icon(Icons.menu, color: Colors.black),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
@@ -140,8 +288,9 @@ class _HomeScreenState extends State<HomeScreen> {
             setState(() {
               _currentIndex = index;
             });
-            if (Scaffold.of(context).isDrawerOpen) {
-              Navigator.pop(context); // Close drawer on mobile
+            // Only mobile has a drawer — close it if we're on mobile screen
+            if (MediaQuery.of(context).size.width <= 800) {
+              Navigator.of(context).pop();
             }
           },
           child: Container(

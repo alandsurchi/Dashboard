@@ -160,11 +160,14 @@ class SmartGarageScreen extends StatelessWidget {
           const SizedBox(height: 20),
           Row(
             children: [
-              const Icon(Icons.bluetooth, color: Colors.blue),
+              Icon(
+                Icons.bluetooth,
+                color: state.garageBluetoothConnected ? Colors.blue : Colors.redAccent,
+              ),
               const SizedBox(width: 12),
               const Expanded(child: Text("Authorized Car Bluetooth")),
               StatusBadge(
-                label: state.garageBluetoothConnected ? 'YES' : 'NO',
+                label: state.garageBluetoothConnected ? 'CONNECTED' : 'DISCONNECTED',
                 color: state.garageBluetoothConnected ? Colors.green : Colors.red,
               ),
             ],
@@ -174,12 +177,12 @@ class SmartGarageScreen extends StatelessWidget {
           const SizedBox(height: 20),
           Row(
             children: [
-              Icon(Icons.directions_car, color: state.garageCarPresent ? Colors.green : Colors.grey),
+              Icon(Icons.directions_car, color: state.garageCarPresent ? Colors.green : Colors.redAccent),
               const SizedBox(width: 12),
               const Expanded(child: Text("Car in front (Ultrasonic)")),
               StatusBadge(
                 label: state.garageCarPresent ? 'YES' : 'NO',
-                color: state.garageCarPresent ? Colors.amber : Colors.green,
+                color: state.garageCarPresent ? Colors.green : Colors.red,
               ),
             ],
           ),

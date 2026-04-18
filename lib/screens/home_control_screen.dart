@@ -79,7 +79,7 @@ class HomeControlScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "${state.currentTime.hour.toString().padLeft(2, '0')}:${state.currentTime.minute.toString().padLeft(2, '0')}",
+                  _format12HourTime(state.currentTime),
                   style: GoogleFonts.shareTechMono(fontSize: 48, fontWeight: FontWeight.bold, color: Colors.blueAccent),
                 ),
                 Text(
@@ -100,7 +100,10 @@ class HomeControlScreen extends StatelessWidget {
               children: [
                 const Icon(Icons.thermostat, color: Colors.orange),
                 const SizedBox(height: 8),
-                Text("${state.temperature.toStringAsFixed(1)}°C", style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                Text(
+                  state.hasLiveHomeSensorData ? "${state.temperature.toStringAsFixed(1)}°C" : "--.-°C",
+                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                ),
                 const Text("Temp", style: TextStyle(color: Colors.grey, fontSize: 12)),
               ],
             ),
@@ -114,7 +117,10 @@ class HomeControlScreen extends StatelessWidget {
               children: [
                 const Icon(Icons.water_drop, color: Colors.blue),
                 const SizedBox(height: 8),
-                Text("${state.humidity}%", style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                Text(
+                  state.hasLiveHomeSensorData ? "${state.humidity}%" : "--%",
+                  style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                ),
                 const Text("Humidity", style: TextStyle(color: Colors.grey, fontSize: 12)),
               ],
             ),
@@ -507,6 +513,14 @@ class HomeControlScreen extends StatelessWidget {
       case 7: return "Sunday";
       default: return "";
     }
+  }
+
+  String _format12HourTime(DateTime dt) {
+    int hour = dt.hour % 12;
+    if (hour == 0) hour = 12;
+    final ampm = dt.hour >= 12 ? 'PM' : 'AM';
+    final minute = dt.minute.toString().padLeft(2, '0');
+    return '${hour.toString().padLeft(2, '0')}:$minute $ampm';
   }
 }
 

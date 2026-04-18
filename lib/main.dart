@@ -24,7 +24,15 @@ void main() async {
         ChangeNotifierProvider(create: (_) => MqttService()),
         ChangeNotifierProxyProvider3<AuthService, FirestoreService, MqttService, DashboardState>(
           create: (_) => DashboardState(null, null, null),
-          update: (_, auth, firestore, mqtt, previous) => DashboardState(auth, firestore, mqtt),
+          update: (_, auth, firestore, mqtt, previous) {
+            // IMPORTANT: reuse the existing instance and update its dependencies in-place.
+            // Creating a new DashboardState here would reset all state every time
+            // MqttService or AuthService notifies (e.g. every MQTT message), which
+            // makes button changes appear to not work.
+            final state = previous ?? DashboardState(auth, firestore, mqtt);
+            state.updateDependencies(auth, firestore, mqtt);
+            return state;
+          },
         ),
       ],
       child: const SmartHomeApp(),

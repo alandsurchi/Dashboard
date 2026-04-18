@@ -45,7 +45,7 @@ class SmartGardenScreen extends StatelessWidget {
               children: [
                 Expanded(child: _buildCircularStatCard("Soil Moisture", state.soilMoisture.toInt(), "%", Colors.greenAccent)),
                 const SizedBox(width: 16),
-                Expanded(child: _buildCircularStatCard("Smoke Level", state.smokeLevel == 'HIGH' ? 85 : 12, "ppm", state.smokeLevel == 'HIGH' ? Colors.redAccent : Colors.greenAccent)),
+                Expanded(child: _buildSmokeStatusCard(state)),
               ],
             ),
             const SizedBox(height: 16),
@@ -124,6 +124,9 @@ class SmartGardenScreen extends StatelessWidget {
   }
 
   Widget _buildClimateCard(DashboardState state) {
+    final double displayTemp = state.temperature;
+    final int displayHumidity = state.humidity;
+
     return CustomCard(
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -131,7 +134,7 @@ class SmartGardenScreen extends StatelessWidget {
           children: [
             const Icon(Icons.thermostat, color: Colors.redAccent, size: 20),
             const SizedBox(height: 8),
-            Text("${state.gardenTemp.toInt()}°C", style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+            Text("${displayTemp.toStringAsFixed(1)}°C", style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
             const Text("Temperature", style: TextStyle(color: Colors.grey, fontSize: 12)),
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 16.0),
@@ -139,8 +142,54 @@ class SmartGardenScreen extends StatelessWidget {
             ),
             const Icon(Icons.water_drop_outlined, color: Colors.blueAccent, size: 20),
             const SizedBox(height: 8),
-            Text("${state.gardenHumidity}%", style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+            Text("$displayHumidity%", style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
             const Text("Humidity", style: TextStyle(color: Colors.grey, fontSize: 12)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSmokeStatusCard(DashboardState state) {
+    final isHigh = state.smokeLevel.toUpperCase() == 'HIGH';
+    final color = isHigh ? Colors.redAccent : Colors.greenAccent;
+
+    return CustomCard(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 16.0),
+        child: Column(
+          children: [
+            SizedBox(
+              height: 120,
+              width: 120,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  CircularProgressIndicator(
+                    value: isHigh ? 1.0 : 0.2,
+                    strokeWidth: 8,
+                    backgroundColor: Colors.white.withValues(alpha: 0.1),
+                    valueColor: AlwaysStoppedAnimation<Color>(color),
+                    strokeCap: StrokeCap.round,
+                  ),
+                  Center(
+                    child: Text(
+                      state.smokeLevel,
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: color),
+                    ),
+                  )
+                ],
+              ),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.local_fire_department_outlined, size: 14, color: color),
+                const SizedBox(width: 6),
+                const Text("Smoke Level", style: TextStyle(color: Colors.grey, fontSize: 13)),
+              ],
+            )
           ],
         ),
       ),
