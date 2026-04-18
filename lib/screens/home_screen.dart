@@ -62,15 +62,13 @@ class _HomeScreenState extends State<HomeScreen> {
     });
 
     if (!available) {
-      _showVoiceMessage('Voice is not supported here. Use Chrome/Edge or type a command.');
-      _openTypedCommandSheet();
+      _showVoiceMessage('Voice is not supported here. Please use a supported browser.');
     }
   }
 
   Future<void> _toggleListening() async {
     await _ensureSpeechReady();
     if (!_speechAvailable) {
-      _openTypedCommandSheet();
       return;
     }
 
@@ -153,81 +151,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _openTypedCommandSheet() {
-    if (!mounted) return;
-
-    final controller = TextEditingController();
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: const Color(0xFF3E352F),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
-      ),
-      builder: (sheetContext) {
-        return Padding(
-          padding: EdgeInsets.only(
-            left: 16,
-            right: 16,
-            top: 16,
-            bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 16,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Type command',
-                style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: controller,
-                autofocus: true,
-                style: const TextStyle(color: Colors.white),
-                decoration: InputDecoration(
-                  hintText: 'Example: turn on led 1',
-                  hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.6)),
-                  enabledBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.25)),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderSide: BorderSide(color: Theme.of(context).primaryColor),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                onSubmitted: (_) {
-                  final typed = controller.text.trim();
-                  if (typed.isEmpty) return;
-                  Navigator.of(sheetContext).pop();
-                  _executeVoiceCommand(typed);
-                },
-              ),
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).primaryColor,
-                    foregroundColor: Colors.black,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                  ),
-                  onPressed: () {
-                    final typed = controller.text.trim();
-                    if (typed.isEmpty) return;
-                    Navigator.of(sheetContext).pop();
-                    _executeVoiceCommand(typed);
-                  },
-                  child: const Text('Run Command'),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
+  // ...existing code...
 
   @override
   Widget build(BuildContext context) {
