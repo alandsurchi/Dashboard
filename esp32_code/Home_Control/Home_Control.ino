@@ -16,12 +16,46 @@ const char *ssid = "Alo";
 const char *password = "11111114";
 String authorizedUID = "A3 6F 77 22";
 float tempThreshold = 28.0;
-const char *mqtt_server = "i2022f00.ala.eu-central-1.emqxsl.com";
+const char *mqtt_server = "tf897ef8.ala.dedicated.aws.emqxcloud.com";
 const int mqtt_port = 8883;
-const char *mqtt_user = "flutter_app";
-const char *mqtt_password = "Smart1Eco.";
-const char *my_uid = "8LvpNY7wzEYXhw4JtmPZLiML9Zc2";
+const char *mqtt_user = "ESP32";
+const char *mqtt_password = "123";
+const char *topic_root = "home/main";
 constexpr uint8_t WIFI_CHAN = 1;
+
+const char *emqx_ca_cert = R"EOF(
+-----BEGIN CERTIFICATE-----
+MIIFazCCA1OgAwIBAgIRAIIQz7DSQONZRGPgu2OCiwAwDQYJKoZIhvcNAQELBQAw
+TzELMAkGA1UEBhMCVVMxKTAnBgNVBAoTIEludGVybmV0IFNlY3VyaXR5IFJlc2Vh
+cmNoIEdyb3VwMRUwEwYDVQQDEwxJU1JHIFJvb3QgWDEwHhcNMTUwNjA0MTEwNDM4
+WhcNMzUwNjA0MTEwNDM4WjBPMQswCQYDVQQGEwJVUzEpMCcGA1UEChMgSW50ZXJu
+ZXQgU2VjdXJpdHkgUmVzZWFyY2ggR3JvdXAxFTATBgNVBAMTDElTUkcgUm9vdCBY
+MTCCAiIwDQYJKoZIhvcNAQEBBQADggIPADCCAgoCggIBAK3oJHP0FDfzm54rVygc
+h77ct984kIxuPOZXoHj3dcKi/vVqbvYATyjb3miGbESTtrFj/RQSa78f0uoxmyF+
+0TM8ukj13Xnfs7j/EvEhmkvBioZxaUpmZmyPfjxwv60pIgbz5MDmgK7iS4+3mX6U
+A5/TR5d8mUgjU+g4rk8Kb4Mu0UlXjIB0ttov0DiNewNwIRt18jA8+o+u3dpjq+sW
+T8KOEUt+zwvo/7V3LvSye0rgTBIlDHCNAymg4VMk7BPZ7hm/ELNKjD+Jo2FR3qyH
+B5T0Y3HsLuJvW5iB4YlcNHlsdu87kGJ55tukmi8mxdAQ4Q7e2RCOFvu396j3x+UC
+B5iPNgiV5+I3lg02dZ77DnKxHZu8A/lJBdiB3QW0KtZB6awBdpUKD9jf1b0SHzUv
+KBds0pjBqAlkd25HN7rOrFleaJ1/ctaJxQZBKT5ZPt0m9STJEadao0xAH0ahmbWn
+OlFuhjuefXKnEgV4We0+UXgVCwOPjdAvBbI+e0ocS3MFEvzG6uBQE3xDk3SzynTn
+jh8BCNAw1FtxNrQHusEwMFxIt4I7mKZ9YIqioymCzLq9gwQbooMDQaHWBfEbwrbw
+qHyGO0aoSCqI3Haadr8faqU9GY/rOPNk3sgrDQoo//fb4hVC1CLQJ13hef4Y53CI
+rU7m2Ys6xt0nUW7/vGT1M0NPAgMBAAGjQjBAMA4GA1UdDwEB/wQEAwIBBjAPBgNV
+HRMBAf8EBTADAQH/MB0GA1UdDgQWBBR5tFnme7bl5AFzgAiIyBpY9umbbjANBgkq
+hkiG9w0BAQsFAAOCAgEAVR9YqbyyqFDQDLHYGmkgJykIrGF1XIpu+ILlaS/V9lZL
+ubhzEFnTIZd+50xx+7LSYK05qAvqFyFWhfFQDlnrzuBZ6brJFe+GnY+EgPbk6ZGQ
+3BebYhtF8GaV0nxvwuo77x/Py9auJ/GpsMiu/X1+mvoiBOv/2X/qkSsisRcOj/KK
+NFtY2PwByVS5uCbMiogziUwthDyC3+6WVwW6LLv3xLfHTjuCvjHIInNzktHCgKQ5
+ORAzI4JMPJ+GslWYHb4phowim57iaztXOoJwTdwJx4nLCgdNbOhdjsnvzqvHu7Ur
+TkXWStAmzOVyyghqpZXjFaH3pO3JLF+l+/+sKAIuvtd7u+Nxe5AW0wdeRlN8NwdC
+jNPElpzVmbUq4JUagEiuTDkHzsxHpFKVK7q4+63SM1N95R1NbdWhscdCb+ZAJzVc
+oyi3B43njTOQ5yOf+1CceWxG1bQVs5ZufpsMljq4Ui0/1lvh+wjChP4kqKOJ2qxq
+4RgqsahDYVvTH9w7jXbyLeiNdd8XM2w9U/t7y0Ff/9yi0GE44Za4rF2LN9d11TPA
+mRGunUHBcnWEvgJBQl9nJEiU0Zsnvgc/ubhPgXRR4Xq37Z0j4r7g1SgEEzwxA57d
+emyPxgcYxn/eR44/KJ4EBs+lVDR3veyJm+kXQ99b21/+jh5Xos1AnX5iItreGCc=
+-----END CERTIFICATE-----
+)EOF";
 
 // ── MAC ADDRESSES ──
 uint8_t garageAddress[] = {0x24, 0x0A, 0xC4, 0x2E, 0x53, 0x14};
@@ -82,7 +116,26 @@ bool isNightMode = false;
 bool fanManualOverride = false;
 float currentTemp = 0.0;
 int currentHumidity = 0;
+int currentDoorAngle = 0;
 unsigned long lastDHTRead = 0;
+unsigned long lastMqttReconnectAttempt = 0;
+unsigned long lastWifiReconnectAttempt = 0;
+const unsigned long mqttReconnectIntervalMs = 5000;
+bool desiredLed1State = false;
+bool desiredLed2State = false;
+bool desiredLed3State = false;
+bool motionLightBoostActive = false;
+unsigned long motionLightBoostUntil = 0;
+const unsigned long motionLightBoostMs = 5000;
+const int ldrDarkThreshold = 1000;
+const int ldrBrightThreshold = 1200;
+
+void applyLedOutputs() {
+  const bool forceLedsOn = motionLightBoostActive || isNightMode;
+  digitalWrite(LIGHT1_LED, (forceLedsOn || desiredLed1State) ? HIGH : LOW);
+  digitalWrite(LIGHT2_LED, (forceLedsOn || desiredLed2State) ? HIGH : LOW);
+  digitalWrite(LIGHT3_LED, (forceLedsOn || desiredLed3State) ? HIGH : LOW);
+}
 
 // ===== 4. HELPER FUNCTIONS =====
 void setRGB(int r, int g, int b) {
@@ -112,15 +165,101 @@ void updateLCD() {
 void moveDoor(int angle) {
   if (angle > 180) angle = 180;
   if (angle < 0) angle = 0;
-  int dutyCycle = map(angle, 0, 180, 410, 1966);
+
+  ledcDetach(SERVO_PIN);
   ledcAttach(SERVO_PIN, 50, 14);
-  ledcWrite(SERVO_PIN, dutyCycle);
+
+  if (currentDoorAngle < angle) {
+    for (int a = currentDoorAngle; a <= angle; a += 2) {
+      ledcWrite(SERVO_PIN, map(a, 0, 180, 410, 1966));
+      delay(10);
+    }
+  } else {
+    for (int a = currentDoorAngle; a >= angle; a -= 2) {
+      ledcWrite(SERVO_PIN, map(a, 0, 180, 410, 1966));
+      delay(10);
+    }
+  }
+
+  currentDoorAngle = angle;
   isServoMoving = true;
   servoDetachTimer = millis();
 }
 
 void playSuccessSound() { tone(BUZZER_PIN, 1500, 150); delay(200); tone(BUZZER_PIN, 2000, 300); }
 void playErrorSound() { tone(BUZZER_PIN, 200, 1000); }
+
+String deviceTopic(const char *device, const char *suffix) {
+  return String(topic_root) + "/" + String(device) + "/" + String(suffix);
+}
+
+bool isDeviceSetTopic(const String &topicStr, const char *device) {
+  String setTopic = String("/") + String(device) + "/set";
+  String legacyCommandTopic = String("/") + String(device) + "/command";
+  return topicStr.endsWith(setTopic) || topicStr.endsWith(legacyCommandTopic);
+}
+
+void publishRetainedStatus(const char *device, const String &payload) {
+  client.publish(deviceTopic(device, "status").c_str(), payload.c_str(), true);
+}
+
+void publishAck(const char *device, bool accepted, const char *detail) {
+  String payload = "{\"accepted\":" + String(accepted ? "true" : "false") +
+                   ",\"detail\":\"" + String(detail) +
+                   "\",\"source\":\"esp32_gateway\"}";
+  client.publish(deviceTopic(device, "ack").c_str(), payload.c_str(), false);
+}
+
+void refreshGaragePeer() {
+  if (esp_now_is_peer_exist(garageAddress)) {
+    esp_now_del_peer(garageAddress);
+  }
+  memcpy(garagePeerInfo.peer_addr, garageAddress, 6);
+  garagePeerInfo.channel = WiFi.channel();
+  garagePeerInfo.encrypt = false;
+  esp_now_add_peer(&garagePeerInfo);
+}
+
+void learnGarageMacFrom(const uint8_t *srcAddr) {
+  if (memcmp(garageAddress, srcAddr, 6) == 0) {
+    return;
+  }
+
+  uint8_t oldGarageAddress[6];
+  memcpy(oldGarageAddress, garageAddress, 6);
+  if (esp_now_is_peer_exist(oldGarageAddress)) {
+    esp_now_del_peer(oldGarageAddress);
+  }
+
+  memcpy(garageAddress, srcAddr, 6);
+  refreshGaragePeer();
+
+  Serial.print("Updated Garage MAC to: ");
+  for (int i = 0; i < 6; i++) {
+    if (garageAddress[i] < 16) Serial.print('0');
+    Serial.print(garageAddress[i], HEX);
+    if (i < 5) Serial.print(':');
+  }
+  Serial.println();
+}
+
+bool sendGarageCommandEspNow(const char *command) {
+  strcpy(outgoingMsg.device, "garage");
+  strcpy(outgoingMsg.command, command);
+  outgoingMsg.value = 0;
+
+  esp_err_t sendResult = esp_now_send(garageAddress, (uint8_t *)&outgoingMsg, sizeof(outgoingMsg));
+  if (sendResult != ESP_OK) {
+    refreshGaragePeer();
+    sendResult = esp_now_send(garageAddress, (uint8_t *)&outgoingMsg, sizeof(outgoingMsg));
+  }
+
+  Serial.print("Garage command ");
+  Serial.print(command);
+  Serial.print(" send result: ");
+  Serial.println((int)sendResult);
+  return sendResult == ESP_OK;
+}
 
 // ── MQTT CALLBACK (From Flutter) ──
 void mqttCallback(char *topic, byte *payload, unsigned int length) {
@@ -129,18 +268,48 @@ void mqttCallback(char *topic, byte *payload, unsigned int length) {
   String topicStr = String(topic);
   
   // 1. ESP-NOW Gateway Routing (Garage)
-  if (topicStr.endsWith("/garage_door/command")) {
-    message.toUpperCase();
-    strcpy(outgoingMsg.device, "garage");
-    if (message.indexOf("OPEN") != -1 || message.indexOf("TRUE") != -1) strcpy(outgoingMsg.command, "OPEN");
-    else strcpy(outgoingMsg.command, "CLOSE");
-    outgoingMsg.value = 0;
-    esp_now_send(garageAddress, (uint8_t *)&outgoingMsg, sizeof(outgoingMsg));
+  if (isDeviceSetTopic(topicStr, "garage_door")) {
+    bool openDoor = false;
+    bool parsed = false;
+
+    DynamicJsonDocument garageDoc(256);
+    DeserializationError garageErr = deserializeJson(garageDoc, message);
+    if (!garageErr) {
+      if (garageDoc.containsKey("state")) {
+        openDoor = garageDoc["state"] == true;
+        parsed = true;
+      } else if (garageDoc.containsKey("status")) {
+        String status = garageDoc["status"].as<String>();
+        status.toUpperCase();
+        openDoor = (status == "OPEN" || status == "OPENING");
+        parsed = true;
+      }
+    }
+
+    if (!parsed) {
+      String upper = message;
+      upper.toUpperCase();
+      if (upper.indexOf("OPEN") != -1 || upper.indexOf("TRUE") != -1) {
+        openDoor = true;
+        parsed = true;
+      } else if (upper.indexOf("CLOSE") != -1 || upper.indexOf("FALSE") != -1) {
+        openDoor = false;
+        parsed = true;
+      }
+    }
+
+    if (!parsed) {
+      publishAck("garage_door", false, "invalid_garage_payload");
+      return;
+    }
+
+    bool queued = sendGarageCommandEspNow(openDoor ? "OPEN" : "CLOSE");
+    publishAck("garage_door", queued, queued ? "queued_to_espnow" : "espnow_send_failed");
     return;
   }
   
   // 2. ESP-NOW Gateway Routing (Garden)
-  if (topicStr.endsWith("/garden_controls/command")) {
+  if (isDeviceSetTopic(topicStr, "garden_controls")) {
     strcpy(outgoingMsg.device, "garden");
     // Forward the raw JSON so garden node can parse it
     // Actually, dashboard sends commands to garden. If it's a pump command:
@@ -155,7 +324,8 @@ void mqttCallback(char *topic, byte *payload, unsigned int length) {
     else return; // Don't send empty useless payloads
     
     outgoingMsg.value = 0;
-    esp_now_send(gardenAddress, (uint8_t *)&outgoingMsg, sizeof(outgoingMsg));
+    esp_err_t sendResult = esp_now_send(gardenAddress, (uint8_t *)&outgoingMsg, sizeof(outgoingMsg));
+    publishAck("garden_controls", sendResult == ESP_OK, sendResult == ESP_OK ? "queued_to_espnow" : "espnow_send_failed");
     return;
   }
 
@@ -164,24 +334,41 @@ void mqttCallback(char *topic, byte *payload, unsigned int length) {
   DeserializationError error = deserializeJson(doc, message);
   if (error) return;
 
+  bool handledLocalState = false;
   if (doc.containsKey("state")) {
     bool state = doc["state"];
-    if (topicStr.endsWith("/led1/command")) digitalWrite(LIGHT1_LED, state ? HIGH : LOW);
-    else if (topicStr.endsWith("/led2/command")) digitalWrite(LIGHT2_LED, state ? HIGH : LOW);
-    else if (topicStr.endsWith("/led3/command")) digitalWrite(LIGHT3_LED, state ? HIGH : LOW);
-    else if (topicStr.endsWith("/fan/command")) fanManualOverride = state;
-    else if (topicStr.endsWith("/tv/command")) digitalWrite(TV_LED, state ? HIGH : LOW);
-    else if (topicStr.endsWith("/wash/command")) digitalWrite(WASH_LED, state ? HIGH : LOW);
-    else if (topicStr.endsWith("/door/command")) {
+    if (isDeviceSetTopic(topicStr, "led1")) {
+      desiredLed1State = state;
+      applyLedOutputs();
+      handledLocalState = true;
+      publishAck("led1", true, "state_applied");
+    }
+    else if (isDeviceSetTopic(topicStr, "led2")) {
+      desiredLed2State = state;
+      applyLedOutputs();
+      handledLocalState = true;
+      publishAck("led2", true, "state_applied");
+    }
+    else if (isDeviceSetTopic(topicStr, "led3")) {
+      desiredLed3State = state;
+      applyLedOutputs();
+      handledLocalState = true;
+      publishAck("led3", true, "state_applied");
+    }
+    else if (isDeviceSetTopic(topicStr, "fan")) { fanManualOverride = state; handledLocalState = true; publishAck("fan", true, "state_applied"); }
+    else if (isDeviceSetTopic(topicStr, "tv")) { digitalWrite(TV_LED, state ? HIGH : LOW); handledLocalState = true; publishAck("tv", true, "state_applied"); }
+    else if (isDeviceSetTopic(topicStr, "wash")) { digitalWrite(WASH_LED, state ? HIGH : LOW); handledLocalState = true; publishAck("wash", true, "state_applied"); }
+    else if (isDeviceSetTopic(topicStr, "door")) {
       isDoorOpen = state;
       doorStatus = state ? "Open" : "Closed";
-      doorTimer = state ? millis() : 0;
       moveDoor(state ? 180 : 0);
       if (state) playSuccessSound();
+      handledLocalState = true;
+      publishAck("door", true, "state_applied");
     }
   }
 
-  if (topicStr.endsWith("/rgb/command")) {
+  if (isDeviceSetTopic(topicStr, "rgb")) {
     bool onState = doc["state"] | false;
     if (!onState) setRGB(0, 0, 0);
     else {
@@ -189,6 +376,9 @@ void mqttCallback(char *topic, byte *payload, unsigned int length) {
       float br = doc["brightness"] | 1.0;
       setRGB(r * br, g * br, b * br);
     }
+    publishAck("rgb", true, "state_applied");
+  } else if (!handledLocalState) {
+    publishAck("gateway", false, "unsupported_topic_or_payload");
   }
 }
 
@@ -197,47 +387,62 @@ void OnDataRecv(const esp_now_recv_info *info, const uint8_t *incomingData, int 
   memcpy(&incomingMsg, incomingData, sizeof(incomingMsg));
   
   if (strcmp(incomingMsg.device, "garage") == 0) {
+    learnGarageMacFrom(info->src_addr);
+
     if (strcmp(incomingMsg.command, "STATUS") == 0) {
       String payload = "{\"status\":\"" + String(incomingMsg.value == 1.0 ? "OPEN" : "CLOSED") + "\"}";
-      client.publish(("home/" + String(my_uid) + "/garage_door/status").c_str(), payload.c_str());
+      publishRetainedStatus("garage_door", payload);
     } else if (strcmp(incomingMsg.command, "CAR") == 0) {
       String payload = "{\"carPresent\":" + String(incomingMsg.value == 1.0 ? "true" : "false") + "}";
-      client.publish(("home/" + String(my_uid) + "/garage_door/status").c_str(), payload.c_str());
+      publishRetainedStatus("garage_door", payload);
     } else if (strcmp(incomingMsg.command, "BLE") == 0) {
       String payload = "{\"bluetoothConnected\":" + String(incomingMsg.value == 1.0 ? "true" : "false") + "}";
-      client.publish(("home/" + String(my_uid) + "/garage_door/status").c_str(), payload.c_str());
+      publishRetainedStatus("garage_door", payload);
     }
   } 
   else if (strcmp(incomingMsg.device, "garden") == 0) {
     // Translate ESP-NOW garden data directly to MQTT JSON
     if (strcmp(incomingMsg.command, "SOIL") == 0) {
       String payload = "{\"soilMoisture\":" + String(incomingMsg.value) + "}";
-      client.publish(("home/" + String(my_uid) + "/garden_sensors/status").c_str(), payload.c_str());
+      publishRetainedStatus("garden_sensors", payload);
     } else if (strcmp(incomingMsg.command, "SMOKE") == 0) {
       String payload = "{\"smokeLevel\":\"" + String(incomingMsg.value == 1.0 ? "HIGH" : "NORMAL") + "\"}";
-      client.publish(("home/" + String(my_uid) + "/garden_sensors/status").c_str(), payload.c_str());
+      publishRetainedStatus("garden_sensors", payload);
     } else if (strcmp(incomingMsg.command, "TEMP") == 0) {
       String payload = "{\"gardenTemp\":" + String(incomingMsg.value) + "}";
-      client.publish(("home/" + String(my_uid) + "/garden_sensors/status").c_str(), payload.c_str());
+      publishRetainedStatus("garden_sensors", payload);
+    } else if (strcmp(incomingMsg.command, "WATER") == 0) {
+      String payload = "{\"tankLevel\":" + String(incomingMsg.value) + "}";
+      publishRetainedStatus("garden_sensors", payload);
     } else if (strcmp(incomingMsg.command, "P_STAT") == 0) {
       String payload = "{\"gardenPumpRunning\":" + String(incomingMsg.value == 1.0 ? "true" : "false") + "}";
-      client.publish(("home/" + String(my_uid) + "/garden_controls/status").c_str(), payload.c_str());
+      publishRetainedStatus("garden_controls", payload);
     } else if (strcmp(incomingMsg.command, "F_STAT") == 0) {
       String payload = "{\"firePumpRunning\":" + String(incomingMsg.value == 1.0 ? "true" : "false") + "}";
-      client.publish(("home/" + String(my_uid) + "/garden_controls/status").c_str(), payload.c_str());
+      publishRetainedStatus("garden_controls", payload);
+    } else if (strcmp(incomingMsg.command, "A_STAT") == 0) {
+      String payload = "{\"autoGardenMode\":" + String(incomingMsg.value == 1.0 ? "true" : "false") + "}";
+      publishRetainedStatus("garden_controls", payload);
+    } else if (strcmp(incomingMsg.command, "S_STAT") == 0) {
+      String payload = "{\"systemEnabled\":" + String(incomingMsg.value == 1.0 ? "true" : "false") + "}";
+      publishRetainedStatus("garden_controls", payload);
     }
   }
 }
 
-void reconnect() {
-  while (!client.connected()) {
-    String clientId = "ESP32-Gateway-" + String(random(0xffff), HEX);
-    if (client.connect(clientId.c_str(), mqtt_user, mqtt_password)) {
-      client.subscribe(("home/" + String(my_uid) + "/+/command").c_str()); // Wildcard for all commands
-    } else {
-      delay(5000);
-    }
+bool reconnect() {
+  String clientId = "ESP32-Gateway-" + String(random(0xffff), HEX);
+  String willTopic = deviceTopic("gateway", "status");
+  String willPayload = "{\"online\":false,\"source\":\"esp32_gateway\"}";
+
+  if (client.connect(clientId.c_str(), mqtt_user, mqtt_password, willTopic.c_str(), 1, true, willPayload.c_str())) {
+    client.subscribe((String(topic_root) + "/+/set").c_str());
+    client.subscribe((String(topic_root) + "/+/command").c_str());
+    client.publish(willTopic.c_str(), "{\"online\":true,\"source\":\"esp32_gateway\"}", true);
+    return true;
   }
+
+  return false;
 }
 
 // ===== 5. SETUP =====
@@ -261,6 +466,8 @@ void setup() {
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED) { delay(500); }
+  Serial.print("Gateway STA MAC: ");
+  Serial.println(WiFi.macAddress());
   
   // Get actual channel from router
   uint8_t actual_chan = WiFi.channel();
@@ -284,19 +491,35 @@ void setup() {
   esp_now_add_peer(&gardenPeerInfo);
 
   // 4. Init MQTT
-  espClient.setInsecure();
+  espClient.setCACert(emqx_ca_cert);
   client.setServer(mqtt_server, mqtt_port);
+  client.setKeepAlive(20);
+  client.setBufferSize(1024);
   client.setCallback(mqttCallback);
 }
 
 // ===== 6. LOOP =====
 void loop() {
-  if (!client.connected()) reconnect();
-  client.loop();
+  if (WiFi.status() != WL_CONNECTED) {
+    if (millis() - lastWifiReconnectAttempt >= mqttReconnectIntervalMs) {
+      lastWifiReconnectAttempt = millis();
+      WiFi.reconnect();
+    }
+    return;
+  }
 
-  if (isServoMoving && millis() - servoDetachTimer >= 1000) {
+  if (!client.connected()) {
+    if (millis() - lastMqttReconnectAttempt >= mqttReconnectIntervalMs) {
+      lastMqttReconnectAttempt = millis();
+      reconnect();
+    }
+  } else {
+    client.loop();
+  }
+
+  if (isServoMoving && millis() - servoDetachTimer >= 2000) {
     isServoMoving = false;
-    ledcWrite(SERVO_PIN, 0); ledcDetach(SERVO_PIN);
+    ledcDetach(SERVO_PIN);
   }
 
   if (millis() - lastDHTRead > 2500 || lastDHTRead == 0) {
@@ -309,31 +532,45 @@ void loop() {
   }
 
   bool currentMotion = digitalRead(PIR_PIN);
+  if (currentMotion) {
+    motionLightBoostActive = true;
+    motionLightBoostUntil = millis() + motionLightBoostMs;
+    applyLedOutputs();
+  }
+
+  if (motionLightBoostActive && (long)(millis() - motionLightBoostUntil) >= 0) {
+    motionLightBoostActive = false;
+    applyLedOutputs();
+  }
+
   if (currentMotion != motionActive) {
     motionActive = currentMotion;
     String motionPayload = "{\"motionDetected\":" + String(motionActive ? "true" : "false") + "}";
-    client.publish(("home/" + String(my_uid) + "/home_sensors/status").c_str(), motionPayload.c_str());
+    publishRetainedStatus("home_sensors", motionPayload);
   }
 
   static unsigned long lastSensorUpdate = 0;
-  if (millis() - lastSensorUpdate > 3000) {
+  if (millis() - lastSensorUpdate > 1000) {
     lastSensorUpdate = millis();
     String payload = "{\"temperature\":" + String(currentTemp) + ", \"humidity\":" + String(currentHumidity) + ", \"motionDetected\":" + String(motionActive ? "true" : "false") + "}";
-    client.publish(("home/" + String(my_uid) + "/home_sensors/status").c_str(), payload.c_str());
+    publishRetainedStatus("home_sensors", payload);
   }
 
   if (currentTemp > tempThreshold || fanManualOverride) digitalWrite(REAL_FAN_PIN, HIGH);
   else digitalWrite(REAL_FAN_PIN, LOW);
 
   int lightVal = analogRead(LDR_PIN);
-  isNightMode = (lightVal < 1000);
+  // Hysteresis avoids LED flicker when ambient light hovers around threshold.
+  if (!isNightMode && lightVal < ldrDarkThreshold) {
+    isNightMode = true;
+    applyLedOutputs();
+  } else if (isNightMode && lightVal > ldrBrightThreshold) {
+    isNightMode = false;
+    applyLedOutputs();
+  }
 
   static unsigned long lastLCD = 0;
   if (millis() - lastLCD > 1000) { lastLCD = millis(); updateLCD(); }
-
-  if (isDoorOpen && millis() - doorTimer > 4000) {
-    isDoorOpen = false; doorStatus = "Closed"; moveDoor(0);
-  }
 
   if (rfid.PICC_IsNewCardPresent() && rfid.PICC_ReadCardSerial()) {
     String content = "";
@@ -344,7 +581,7 @@ void loop() {
     content.toUpperCase();
     if (content.substring(1) == authorizedUID) {
       playSuccessSound();
-      isDoorOpen = true; doorStatus = "Open"; doorTimer = millis(); moveDoor(180);
+      isDoorOpen = true; doorStatus = "Open"; moveDoor(180);
     } else playErrorSound();
     rfid.PICC_HaltA(); rfid.PCD_StopCrypto1();
   }

@@ -39,17 +39,36 @@ bool deviceConnected = false;
 bool garageIsOpen = false;
 int currentDistance = 400;
 unsigned long detectionStartTime = 0;
+int currentGarageAngle = 0;
+unsigned long lastAutoOpenMs = 0;
+const unsigned long autoOpenCooldownMs = 6000;
+bool openedByCondition = false;
+int lastButtonReading = HIGH;
+int stableButtonState = HIGH;
+unsigned long lastButtonDebounceMs = 0;
+const unsigned long buttonDebounceMs = 50;
 
 BLEServer *pServer = NULL;
 
 void moveDoor(bool open) {
-  int angle = open ? 180 : 0;
-  if (angle > 180) angle = 180;
-  if (angle < 0) angle = 0;
+  int targetAngle = open ? 180 : 0;
 
-  int dutyCycle = map(angle, 0, 180, 410, 1966);
+  ledcDetach(SERVO_PIN);
   ledcAttach(SERVO_PIN, 50, 14);
-  ledcWrite(SERVO_PIN, dutyCycle);
+
+  if (currentGarageAngle < targetAngle) {
+    for (int a = currentGarageAngle; a <= targetAngle; a += 2) {
+      ledcWrite(SERVO_PIN, map(a, 0, 180, 410, 1966));
+      delay(10);
+    }
+  } else {
+    for (int a = currentGarageAngle; a >= targetAngle; a -= 2) {
+      ledcWrite(SERVO_PIN, map(a, 0, 180, 410, 1966));
+      delay(10);
+    }
+  }
+
+  currentGarageAngle = targetAngle;
 
   isServoMoving = true;
   servoDetachTimer = millis();
@@ -89,6 +108,79 @@ void sendStatus() {
   esp_now_send(gatewayAddress, (uint8_t *) &outgoingMsg, sizeof(outgoingMsg));
 }
 
+void evaluateAutoOpenFallback() {
+  const bool carDetected = currentDistance < DISTANCE_THRESHOLD;
+  if (!deviceConnected || !carDetected || garageIsOpen || isServoMoving) {
+    return;
+  }
+
+  if (millis() - lastAutoOpenMs < autoOpenCooldownMs) {
+    return;
+  }
+
+  lastAutoOpenMs = millis();
+  openedByCondition = true;
+  detectionStartTime = 0;
+  Serial.println("AUTO: BLE + Car detected -> opening garage door");
+  moveDoor(true);
+  sendStatus();
+}
+
+void evaluateConditionLossAutoClose() {
+  const bool conditionStillValid = deviceConnected && (currentDistance < DISTANCE_THRESHOLD);
+
+  if (!openedByCondition || !garageIsOpen || isServoMoving) {
+    detectionStartTime = 0;
+    return;
+  }
+
+  if (conditionStillValid) {
+    detectionStartTime = 0;
+    return;
+  }
+
+  if (detectionStartTime == 0) {
+    detectionStartTime = millis();
+    return;
+  }
+
+  if (millis() - detectionStartTime < CONFIRMATION_DELAY) {
+    return;
+  }
+
+  openedByCondition = false;
+  detectionStartTime = 0;
+  Serial.println("AUTO: Condition lost -> closing garage door");
+  moveDoor(false);
+  sendStatus();
+}
+
+void handlePhysicalButton() {
+  int reading = digitalRead(BUTTON_PIN);
+
+  if (reading != lastButtonReading) {
+    lastButtonDebounceMs = millis();
+    lastButtonReading = reading;
+  }
+
+  if (millis() - lastButtonDebounceMs < buttonDebounceMs) {
+    return;
+  }
+
+  if (reading == stableButtonState) {
+    return;
+  }
+
+  stableButtonState = reading;
+  if (stableButtonState == LOW && !isServoMoving) {
+    openedByCondition = false;
+    detectionStartTime = 0;
+    Serial.println("BUTTON: Toggling garage door");
+    moveDoor(!garageIsOpen);
+    sendStatus();
+  }
+}
+
 // ── UPDATED: Callback when data is received ──
 void OnDataRecv(const esp_now_recv_info *info, const uint8_t *incomingData, int len) {
   memcpy(&incomingMsg, incomingData, sizeof(incomingMsg));
@@ -101,10 +193,14 @@ void OnDataRecv(const esp_now_recv_info *info, const uint8_t *incomingData, int 
   
   if (strcmp(incomingMsg.device, "garage") == 0) {
     if (strcmp(incomingMsg.command, "OPEN") == 0) {
-      if (!garageIsOpen) moveDoor(true);
+      openedByCondition = false;
+      detectionStartTime = 0;
+      moveDoor(true);
     } 
     else if (strcmp(incomingMsg.command, "CLOSE") == 0) {
-      if (garageIsOpen) moveDoor(false);
+      openedByCondition = false;
+      detectionStartTime = 0;
+      moveDoor(false);
     }
   }
 }
@@ -195,9 +291,8 @@ void setup() {
 }
 
 void loop() {
-  if (isServoMoving && millis() - servoDetachTimer >= 1000) {
+  if (isServoMoving && millis() - servoDetachTimer >= 2000) {
     isServoMoving = false;
-    ledcWrite(SERVO_PIN, 0); 
     ledcDetach(SERVO_PIN);
     sendStatus(); 
   }
@@ -208,39 +303,9 @@ void loop() {
     currentDistance = getDistance();
   }
 
-  static bool lastButtonState = HIGH;
-  static unsigned long lastDebounceTime = 0;
-  bool reading = digitalRead(BUTTON_PIN);
-  if (reading != lastButtonState) {
-    lastDebounceTime = millis();
-  }
-  if ((millis() - lastDebounceTime) > 50) {
-    static bool buttonState = HIGH;
-    if (reading != buttonState) {
-      buttonState = reading;
-      if (buttonState == LOW && !isServoMoving) { 
-        moveDoor(!garageIsOpen);
-        delay(500); // Give it time to start moving
-        sendStatus(); 
-      }
-    }
-  }
-  lastButtonState = reading;
-
-  if (!garageIsOpen && !isServoMoving) {
-    bool bothActive = (deviceConnected && currentDistance < DISTANCE_THRESHOLD);
-    if (bothActive) {
-      if (detectionStartTime == 0) detectionStartTime = millis();
-      else if (millis() - detectionStartTime > CONFIRMATION_DELAY) {
-        moveDoor(true);
-        detectionStartTime = 0;
-      }
-    } else {
-      detectionStartTime = 0;
-    }
-  } else {
-    detectionStartTime = 0;
-  }
+  evaluateAutoOpenFallback();
+  evaluateConditionLossAutoClose();
+  handlePhysicalButton();
 
   static unsigned long lastUpdate = 0;
   if (!isServoMoving && millis() - lastUpdate > 2000) {

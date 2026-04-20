@@ -54,3 +54,4 @@ app.*.map.json
 
 # Local certificate used for optional MQTT TLS trust pinning
 emqxcloud-ca.crt
+.vercel
